@@ -6,6 +6,9 @@ MODBUS++ (MODBUSPP) is an open source c++ class/ library making an encapsulation
 MODBUS++ is based on Object-Oriented Programming. While it keeps the efficiency of C++ Code
 , it provides a higher level of abstraction than other C Modbus Library. Generally, it is
 easier for programmers to use in their development requiring MODBUS TCP Protocol.
+
+## Attention: The code has dependencies on libary on Linux for TCP/IP, if you want to use this in windows, check winsock2 and rewrite portion of code based on socket, Thanks!
+
 ## Usage
 Following the steps:
 ### Download
