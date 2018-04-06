@@ -37,10 +37,6 @@ modbus::modbus(string host) {
  * Destructor of Modbus Object
  */
 modbus::~modbus(void) {
-    delete(&HOST);
-    delete(&PORT);
-    delete(&_socket);
-    delete(&_server);
 }
 
 
