@@ -8,10 +8,10 @@ using namespace std;
 
 
 /**
- * Main Constructor of Modbus Object
+ * Main Constructor of Modbus Connector Object
  * @param host IP Address of Host
- * @param port Port for Connection
- * @return     A Modbus Object
+ * @param port Port for the TCP Connection
+ * @return     A Modbus Connector Object
  */
 modbus::modbus(string host, uint16_t port) {
     HOST = host;
@@ -24,9 +24,9 @@ modbus::modbus(string host, uint16_t port) {
 
 
 /**
- * Overloading Modbus Constructor with Default Port at 502
+ * Overloading Modbus Connector Constructor with Default Port Set at 502
  * @param host  IP Address of Host
- * @return      A Modbus Object
+ * @return      A Modbus Connector Object
  */
 modbus::modbus(string host) {
     modbus(host, 502);
@@ -34,15 +34,15 @@ modbus::modbus(string host) {
 
 
 /**
- * Destructor of Modbus Object
+ * Destructor of Modbus Connector Object
  */
 modbus::~modbus(void) {
 }
 
 
 /**
- * Set Slave ID
- * @param id  Id of Slave in Server to Set
+ * Modbus Slave ID Setter
+ * @param id  ID of the Modbus Server Slave
  */
 void modbus::modbus_set_slave_id(int id) {
     _slaveid = id;
@@ -51,7 +51,7 @@ void modbus::modbus_set_slave_id(int id) {
 
 
 /**
- * Build up Connection
+ * Build up a Modbus/TCP Connection
  * @return   If A Connection Is Successfully Built
  */
 bool modbus::modbus_connect() {
@@ -86,7 +86,7 @@ bool modbus::modbus_connect() {
 
 
 /**
- * Close the Connection
+ * Close the Modbus/TCP Connection
  */
 void modbus::modbus_close() {
     close(_socket);
@@ -96,9 +96,9 @@ void modbus::modbus_close() {
 
 /**
  * Modbus Request Builder
- * @param to_send   Message Buffer to Send
+ * @param to_send   Message Buffer to Be Sent
  * @param address   Reference Address
- * @param func      Functional Code
+ * @param func      Modbus Functional Code
  */
 void modbus::modbus_build_request(uint8_t *to_send, int address, int func) {
     to_send[0] = (uint8_t) _msg_id >> 8;
@@ -116,9 +116,9 @@ void modbus::modbus_build_request(uint8_t *to_send, int address, int func) {
 /**
  * Write Request Builder and Sender
  * @param address   Reference Address
- * @param amount    Amount to Write
- * @param func      Functional Code
- * @param value     Value to Write
+ * @param amount    Amount of data to be Written
+ * @param func      Modbus Functional Code
+ * @param value     Data to Be Written
  */
 void modbus::modbus_write(int address, int amount, int func, uint16_t *value) {
     if(func == WRITE_COIL || func == WRITE_REG) {
@@ -156,10 +156,10 @@ void modbus::modbus_write(int address, int amount, int func, uint16_t *value) {
 
 
 /**
- * Read Requeset Builder and Sender
+ * Read Request Builder and Sender
  * @param address   Reference Address
- * @param amount    Amount to Read
- * @param func      Functional Code
+ * @param amount    Amount of Data to Read
+ * @param func      Modbus Functional Code
  */
 void modbus::modbus_read(int address, int amount, int func){
     uint8_t to_send[12];
@@ -172,10 +172,11 @@ void modbus::modbus_read(int address, int amount, int func){
 
 
 /**
- * Read Holding Registers           MODBUS FUNCTION 0x03
+ * Read Holding Registers
+ * MODBUS FUNCTION 0x03
  * @param address    Reference Address
  * @param amount     Amount of Registers to Read
- * @param buffer     Buffer to Store Data
+ * @param buffer     Buffer to Store Data Read from Registers
  */
 void modbus::modbus_read_holding_registers(int address, int amount, uint16_t *buffer) {
     if(_connected) {
@@ -204,10 +205,11 @@ void modbus::modbus_read_holding_registers(int address, int amount, uint16_t *bu
 
 
 /**
- * Read Input Registers             MODBUS FUNCTION 0x04
+ * Read Input Registers 
+ * MODBUS FUNCTION 0x04
  * @param address     Reference Address
  * @param amount      Amount of Registers to Read
- * @param buffer      Buffer to Store Data
+ * @param buffer      Buffer to Store Data Read from Registers
  */
 void modbus::modbus_read_input_registers(int address, int amount, uint16_t *buffer) {
     if(_connected){
@@ -236,10 +238,11 @@ void modbus::modbus_read_input_registers(int address, int amount, uint16_t *buff
 
 
 /**
- * Read Coils           MODBUS FUNCTION 0x01
+ * Read Coils           
+ * MODBUS FUNCTION 0x01
  * @param address     Reference Address
  * @param amount      Amount of Coils to Read
- * @param buffer      Buffers to Store Data
+ * @param buffer      Buffer to Store Data Read from Coils
  */
 void modbus::modbus_read_coils(int address, int amount, bool *buffer) {
     if(_connected) {
@@ -267,10 +270,11 @@ void modbus::modbus_read_coils(int address, int amount, bool *buffer) {
 
 
 /**
- * Read Input Bits(Discrete Data)      MODBUS FUNCITON 0x02
+ * Read Input Bits(Discrete Data)
+ * MODBUS FUNCITON 0x02
  * @param address   Reference Address
  * @param amount    Amount of Bits to Read
- * @param buffer    Buffer to store Data
+ * @param buffer    Buffer to store Data Read from Input Bits
  */
 void modbus::modbus_read_input_bits(int address, int amount, bool* buffer) {
     if(_connected) {
@@ -298,9 +302,10 @@ void modbus::modbus_read_input_bits(int address, int amount, bool* buffer) {
 
 
 /**
- * Write Single Coils         MODBUS FUNCTION 0x05
+ * Write Single Coils
+ * MODBUS FUNCTION 0x05
  * @param address    Reference Address
- * @param to_write   Value to Write to Coil
+ * @param to_write   Value to be Written to Coil
  */
 void modbus::modbus_write_coil(int address, bool to_write) {
     if(_connected) {
@@ -326,9 +331,10 @@ void modbus::modbus_write_coil(int address, bool to_write) {
 
 
 /**
- * Write Single Register        FUCTION 0x06
+ * Write Single Register
+ * FUCTION 0x06
  * @param address   Reference Address
- * @param value     Value to Write to Register
+ * @param value     Value to Be Written to Register
  */
 void modbus::modbus_write_register(int address, uint16_t value) {
     if(_connected) {
@@ -353,10 +359,11 @@ void modbus::modbus_write_register(int address, uint16_t value) {
 
 
 /**
- * Write Multiple Coils        MODBUS FUNCTION 0x0F
+ * Write Multiple Coils 
+ * MODBUS FUNCTION 0x0F
  * @param address  Reference Address
  * @param amount   Amount of Coils to Write
- * @param value    Values to Write
+ * @param value    Values to Be Written to Coils
  */
 void modbus::modbus_write_coils(int address, int amount, bool *value) {
     if(_connected) {
@@ -385,10 +392,11 @@ void modbus::modbus_write_coils(int address, int amount, bool *value) {
 
 
 /**
- * Write Multiple Registers    MODBUS FUNCION 0x10
+ * Write Multiple Registers 
+ * MODBUS FUNCION 0x10
  * @param address Reference Address
  * @param amount  Amount of Value to Write
- * @param value   Values to Write
+ * @param value   Values to Be Written to the Registers
  */
 void modbus::modbus_write_registers(int address, int amount, uint16_t *value) {
     if(_connected) {
@@ -414,7 +422,7 @@ void modbus::modbus_write_registers(int address, int amount, uint16_t *value) {
 
 /**
  * Data Sender
- * @param to_send Requeset to Send to Server
+ * @param to_send Request to Be Sent to Server
  * @param length  Length of the Request
  * @return        Size of the request
  */
@@ -426,8 +434,8 @@ ssize_t modbus::modbus_send(uint8_t *to_send, int length) {
 
 /**
  * Data Receiver
- * @param buffer Buffer to Store the Data
- * @return       Size of the Incoming Data
+ * @param buffer Buffer to Store the Data Retrieved
+ * @return       Size of Incoming Data
  */
 ssize_t modbus::modbus_receive(uint8_t *buffer) {
     return recv(_socket, (char *) buffer, 1024, 0);
@@ -436,7 +444,7 @@ ssize_t modbus::modbus_receive(uint8_t *buffer) {
 
 /**
  * Error Code Handler
- * @param msg   Message Received from Server
+ * @param msg   Message Received from the Server
  * @param func  Modbus Functional Code
  */
 void modbus::modbus_error_handle(uint8_t *msg, int func) {

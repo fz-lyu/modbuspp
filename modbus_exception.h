@@ -10,7 +10,9 @@ using namespace std;
 
 
 /**
- * MODBS EXCPETION
+ * Modbus Exeception Super Class
+ *
+ * Throwed when a exception or errors happens in modbus protocol
  */
 class modbus_exception : public exception {
 public:
@@ -23,7 +25,9 @@ public:
 
 
 /**
- * Represent Connection Issue in Class
+ * Connection Issue
+ *
+ * Throwed when a connection issues happens between modbus client and server
  */
 class modbus_connect_exception: public modbus_exception {
 public:
@@ -35,7 +39,9 @@ public:
 
 
 /**
- * Illegal Function      Error response Function 0x01
+ * Illegal Function
+ *
+ * Throwed when modbus server return error response function 0x01
  */
 class modbus_illegal_function_exception: public modbus_exception {
 public:
@@ -47,7 +53,9 @@ public:
 
 
 /**
- * Illegal Address      Error Response Function 0x02
+ * Illegal Address
+ *
+ * Throwed when modbus server return error response function 0x02
  */
 class modbus_illegal_address_exception: public modbus_exception {
 public:
@@ -60,7 +68,9 @@ public:
 
 
 /**
- * Illegal Data Vlaue   Error Response Funciton 0x03
+ * Illegal Data Vlaue
+ *
+ * Throwed when modbus server return error response function 0x03
  */
 class modbus_illegal_data_value_exception: public modbus_exception {
 public:
@@ -72,7 +82,9 @@ public:
 
 
 /**
- * Server Failure       Error Response Function 0x04
+ * Server Failure
+ *
+ * Throwed when modbus server return error response function 0x04
  */
 class modbus_server_failure_exception: public modbus_exception {
 public:
@@ -84,7 +96,9 @@ public:
 
 
 /**
- * Acknowledge          Error Response Function 0x05
+ * Acknowledge
+ *
+ * Throwed when modbus server return error response function 0x05
  */
 class modbus_acknowledge_exception: public modbus_exception {
 public:
@@ -97,7 +111,9 @@ public:
 
 
 /**
- * Server Busy           Error Response Function 0x06
+ * Server Busy
+ *
+ * Throwed when modbus server return error response function 0x06
  */
 class modbus_server_busy_exception: public modbus_exception {
 public:
@@ -109,7 +125,9 @@ public:
 
 
 /**
- * Gate Way Problem     Error Response Function 0x0A 0x0B
+ * Gate Way Problem
+ *
+ * Throwed when modbus server return error response function 0x0A and 0x0B
  */
 class modbus_gateway_exception: public modbus_exception {
 public:
@@ -122,7 +140,8 @@ public:
 
 /**
  * Buffer Exception
- * Buffer is Too Small for Data Storage
+ *
+ * Throwed when buffer is too small for the data to be storaged.
  */
 class modbus_buffer_exception: public modbus_exception {
 public:
@@ -135,7 +154,8 @@ public:
 
 /**
  * Amount Exception
- * Address or Amount Input is Wrong
+ *
+ * Throwed when the address or amount input is mismatching.
  */
 class modbus_amount_exception: public modbus_exception {
 public:
