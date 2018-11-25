@@ -16,7 +16,7 @@ using namespace std;
 
 #define MAX_MSG_LENGTH 260
 
-//Function Code
+///Function Code
 enum{
     READ_COILS       = 0x01,
     READ_INPUT_BITS  = 0x02,
@@ -28,7 +28,7 @@ enum{
     WRITE_REGS       = 0x10,
 };
 
-//Exception Codes
+///Exception Codes
 enum {
     EX_ILLEGAL_FUNCTION = 0x01, // Function Code not Supported
     EX_ILLEGAL_ADDRESS  = 0x02, // Output Address not exists
@@ -41,6 +41,11 @@ enum {
 };
 
 
+/// Modbus Operator Class
+/**
+ * Modbus Operator Class
+ * Providing networking support and mobus operation support.
+ */
 class modbus {
 private:
     bool _connected;

@@ -1,5 +1,14 @@
 \hypertarget{classmodbus}{}\section{modbus Class Reference}
 \label{classmodbus}\index{modbus@{modbus}}
+
+
+Modbus Operator Class.  
+
+
+
+
+{\ttfamily \#include $<$modbus.\+h$>$}
+
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
@@ -33,6 +42,15 @@ void \mbox{\hyperlink{classmodbus_ad91dab7ef70066e3fcb03cf6d9a72cc3}{modbus\+\_\
 \end{DoxyCompactItemize}
 
 
+\subsection{Detailed Description}
+Modbus Operator Class. 
+
+Modbus Operator Class Providing networking support and mobus operation support. 
+
+Definition at line 49 of file modbus.\+h.
+
+
+
 \subsection{Constructor \& Destructor Documentation}
 \mbox{\Hypertarget{classmodbus_a8a92b53fdbacc156cd2b5f21a244b5f2}\label{classmodbus_a8a92b53fdbacc156cd2b5f21a244b5f2}} 
 \index{modbus@{modbus}!modbus@{modbus}}
@@ -50,6 +68,10 @@ Main Constructor of Modbus Connector Object
 \begin{DoxyReturn}{Returns}
 A Modbus Connector Object 
 \end{DoxyReturn}
+
+
+Definition at line 16 of file modbus.\+cpp.
+
 \mbox{\Hypertarget{classmodbus_a6902af6b4f02a3cc07ef040c389360d2}\label{classmodbus_a6902af6b4f02a3cc07ef040c389360d2}} 
 \index{modbus@{modbus}!modbus@{modbus}}
 \index{modbus@{modbus}!modbus@{modbus}}
@@ -64,6 +86,10 @@ Overloading Modbus Connector Constructor with Default Port Set at 502
 \begin{DoxyReturn}{Returns}
 A Modbus Connector Object 
 \end{DoxyReturn}
+
+
+Definition at line 31 of file modbus.\+cpp.
+
 \mbox{\Hypertarget{classmodbus_a28daaab3b7a8c838636c639d2eb14e4f}\label{classmodbus_a28daaab3b7a8c838636c639d2eb14e4f}} 
 \index{modbus@{modbus}!````~modbus@{$\sim$modbus}}
 \index{````~modbus@{$\sim$modbus}!modbus@{modbus}}
@@ -72,6 +98,10 @@ A Modbus Connector Object
 
 Destructor of Modbus Connector Object 
 
+Definition at line 39 of file modbus.\+cpp.
+
+
+
 \subsection{Member Function Documentation}
 \mbox{\Hypertarget{classmodbus_a9b0db97f942a083431b5374055d4bf1b}\label{classmodbus_a9b0db97f942a083431b5374055d4bf1b}} 
 \index{modbus@{modbus}!modbus\+\_\+close@{modbus\+\_\+close}}
@@ -79,7 +109,11 @@ Destructor of Modbus Connector Object
 \subsubsection{\texorpdfstring{modbus\+\_\+close()}{modbus\_close()}}
 {\footnotesize\ttfamily void modbus\+::modbus\+\_\+close (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
 
-Close the Modbus/\+T\+CP Connection \mbox{\Hypertarget{classmodbus_a13709baee171c97231a33ec4edfa1051}\label{classmodbus_a13709baee171c97231a33ec4edfa1051}} 
+Close the Modbus/\+T\+CP Connection 
+
+Definition at line 91 of file modbus.\+cpp.
+
+\mbox{\Hypertarget{classmodbus_a13709baee171c97231a33ec4edfa1051}\label{classmodbus_a13709baee171c97231a33ec4edfa1051}} 
 \index{modbus@{modbus}!modbus\+\_\+connect@{modbus\+\_\+connect}}
 \index{modbus\+\_\+connect@{modbus\+\_\+connect}!modbus@{modbus}}
 \subsubsection{\texorpdfstring{modbus\+\_\+connect()}{modbus\_connect()}}
@@ -88,6 +122,10 @@ Close the Modbus/\+T\+CP Connection \mbox{\Hypertarget{classmodbus_a13709baee171
 Build up a Modbus/\+T\+CP Connection \begin{DoxyReturn}{Returns}
 If A Connection Is Successfully Built 
 \end{DoxyReturn}
+
+
+Definition at line 57 of file modbus.\+cpp.
+
 \mbox{\Hypertarget{classmodbus_ae4f8480f4062d7bed3ff463da64d0027}\label{classmodbus_ae4f8480f4062d7bed3ff463da64d0027}} 
 \index{modbus@{modbus}!modbus\+\_\+read\+\_\+coils@{modbus\+\_\+read\+\_\+coils}}
 \index{modbus\+\_\+read\+\_\+coils@{modbus\+\_\+read\+\_\+coils}!modbus@{modbus}}
@@ -104,6 +142,10 @@ M\+O\+D\+B\+US F\+U\+N\+C\+T\+I\+ON 0x01
 {\em buffer} & Buffer to Store Data Read from Coils \\
 \hline
 \end{DoxyParams}
+
+
+Definition at line 247 of file modbus.\+cpp.
+
 \mbox{\Hypertarget{classmodbus_a2a2079dc10a200764984497fea7c85b3}\label{classmodbus_a2a2079dc10a200764984497fea7c85b3}} 
 \index{modbus@{modbus}!modbus\+\_\+read\+\_\+holding\+\_\+registers@{modbus\+\_\+read\+\_\+holding\+\_\+registers}}
 \index{modbus\+\_\+read\+\_\+holding\+\_\+registers@{modbus\+\_\+read\+\_\+holding\+\_\+registers}!modbus@{modbus}}
@@ -119,6 +161,10 @@ Read Holding Registers M\+O\+D\+B\+US F\+U\+N\+C\+T\+I\+ON 0x03
 {\em buffer} & Buffer to Store Data Read from Registers \\
 \hline
 \end{DoxyParams}
+
+
+Definition at line 181 of file modbus.\+cpp.
+
 \mbox{\Hypertarget{classmodbus_a22e2773a0475961956eeee0f7056c6c0}\label{classmodbus_a22e2773a0475961956eeee0f7056c6c0}} 
 \index{modbus@{modbus}!modbus\+\_\+read\+\_\+input\+\_\+bits@{modbus\+\_\+read\+\_\+input\+\_\+bits}}
 \index{modbus\+\_\+read\+\_\+input\+\_\+bits@{modbus\+\_\+read\+\_\+input\+\_\+bits}!modbus@{modbus}}
@@ -134,6 +180,10 @@ Read Input Bits(\+Discrete Data) M\+O\+D\+B\+US F\+U\+N\+C\+I\+T\+ON 0x02
 {\em buffer} & Buffer to store Data Read from Input Bits \\
 \hline
 \end{DoxyParams}
+
+
+Definition at line 279 of file modbus.\+cpp.
+
 \mbox{\Hypertarget{classmodbus_a228dcada3a0f37e9d1f346842fb29a39}\label{classmodbus_a228dcada3a0f37e9d1f346842fb29a39}} 
 \index{modbus@{modbus}!modbus\+\_\+read\+\_\+input\+\_\+registers@{modbus\+\_\+read\+\_\+input\+\_\+registers}}
 \index{modbus\+\_\+read\+\_\+input\+\_\+registers@{modbus\+\_\+read\+\_\+input\+\_\+registers}!modbus@{modbus}}
@@ -149,6 +199,10 @@ Read Input Registers M\+O\+D\+B\+US F\+U\+N\+C\+T\+I\+ON 0x04
 {\em buffer} & Buffer to Store Data Read from Registers \\
 \hline
 \end{DoxyParams}
+
+
+Definition at line 214 of file modbus.\+cpp.
+
 \mbox{\Hypertarget{classmodbus_a6880efa2a3859ce0752c016588998ffe}\label{classmodbus_a6880efa2a3859ce0752c016588998ffe}} 
 \index{modbus@{modbus}!modbus\+\_\+set\+\_\+slave\+\_\+id@{modbus\+\_\+set\+\_\+slave\+\_\+id}}
 \index{modbus\+\_\+set\+\_\+slave\+\_\+id@{modbus\+\_\+set\+\_\+slave\+\_\+id}!modbus@{modbus}}
@@ -160,6 +214,10 @@ Modbus Slave ID Setter
 {\em id} & ID of the Modbus Server Slave \\
 \hline
 \end{DoxyParams}
+
+
+Definition at line 47 of file modbus.\+cpp.
+
 \mbox{\Hypertarget{classmodbus_a8717e5472d5a536beb0308bdeeac2233}\label{classmodbus_a8717e5472d5a536beb0308bdeeac2233}} 
 \index{modbus@{modbus}!modbus\+\_\+write\+\_\+coil@{modbus\+\_\+write\+\_\+coil}}
 \index{modbus\+\_\+write\+\_\+coil@{modbus\+\_\+write\+\_\+coil}!modbus@{modbus}}
@@ -173,6 +231,10 @@ Write Single Coils M\+O\+D\+B\+US F\+U\+N\+C\+T\+I\+ON 0x05
 {\em to\+\_\+write} & Value to be Written to Coil \\
 \hline
 \end{DoxyParams}
+
+
+Definition at line 310 of file modbus.\+cpp.
+
 \mbox{\Hypertarget{classmodbus_a26201b5f872bce56f665d905ffcaaa97}\label{classmodbus_a26201b5f872bce56f665d905ffcaaa97}} 
 \index{modbus@{modbus}!modbus\+\_\+write\+\_\+coils@{modbus\+\_\+write\+\_\+coils}}
 \index{modbus\+\_\+write\+\_\+coils@{modbus\+\_\+write\+\_\+coils}!modbus@{modbus}}
@@ -188,6 +250,10 @@ Write Multiple Coils M\+O\+D\+B\+US F\+U\+N\+C\+T\+I\+ON 0x0F
 {\em value} & Values to Be Written to Coils \\
 \hline
 \end{DoxyParams}
+
+
+Definition at line 368 of file modbus.\+cpp.
+
 \mbox{\Hypertarget{classmodbus_ab70c70f8b76075be92304f5f4bad9c6b}\label{classmodbus_ab70c70f8b76075be92304f5f4bad9c6b}} 
 \index{modbus@{modbus}!modbus\+\_\+write\+\_\+register@{modbus\+\_\+write\+\_\+register}}
 \index{modbus\+\_\+write\+\_\+register@{modbus\+\_\+write\+\_\+register}!modbus@{modbus}}
@@ -201,6 +267,10 @@ Write Single Register F\+U\+C\+T\+I\+ON 0x06
 {\em value} & Value to Be Written to Register \\
 \hline
 \end{DoxyParams}
+
+
+Definition at line 339 of file modbus.\+cpp.
+
 \mbox{\Hypertarget{classmodbus_ad91dab7ef70066e3fcb03cf6d9a72cc3}\label{classmodbus_ad91dab7ef70066e3fcb03cf6d9a72cc3}} 
 \index{modbus@{modbus}!modbus\+\_\+write\+\_\+registers@{modbus\+\_\+write\+\_\+registers}}
 \index{modbus\+\_\+write\+\_\+registers@{modbus\+\_\+write\+\_\+registers}!modbus@{modbus}}
@@ -216,6 +286,10 @@ Write Multiple Registers M\+O\+D\+B\+US F\+U\+N\+C\+I\+ON 0x10
 {\em value} & Values to Be Written to the Registers \\
 \hline
 \end{DoxyParams}
+
+
+Definition at line 401 of file modbus.\+cpp.
+
 
 
 The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}

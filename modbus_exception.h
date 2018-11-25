@@ -9,6 +9,7 @@
 using namespace std;
 
 
+/// Modbus Exception Class
 /**
  * Modbus Exeception Super Class
  *
@@ -24,6 +25,7 @@ public:
 };
 
 
+/// Modbus Connect Exception
 /**
  * Connection Issue
  *
@@ -38,6 +40,7 @@ public:
 };
 
 
+/// Modbus Illgal Function Exception
 /**
  * Illegal Function
  *
@@ -52,6 +55,7 @@ public:
 };
 
 
+/// Modbus Illegal Address Exception
 /**
  * Illegal Address
  *
@@ -67,6 +71,7 @@ public:
 };
 
 
+/// Modbus Illegal Data Value Exception
 /**
  * Illegal Data Vlaue
  *
@@ -81,6 +86,7 @@ public:
 };
 
 
+/// Modbus Server Failure Exception
 /**
  * Server Failure
  *
@@ -95,6 +101,7 @@ public:
 };
 
 
+/// Modbus Acknowledge Exception
 /**
  * Acknowledge
  *
@@ -109,7 +116,7 @@ public:
 };
 
 
-
+/// Modbus Server Busy Exception
 /**
  * Server Busy
  *
@@ -123,7 +130,7 @@ public:
     }
 };
 
-
+/// Modbus Gate Way Problem Exception
 /**
  * Gate Way Problem
  *
@@ -137,7 +144,7 @@ public:
     }
 };
 
-
+/// Modbus Buffer Exception
 /**
  * Buffer Exception
  *
@@ -152,6 +159,7 @@ public:
 };
 
 
+/// Modbus Amount Exception
 /**
  * Amount Exception
  *
