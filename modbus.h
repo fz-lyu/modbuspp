@@ -1,15 +1,40 @@
 //
 // Created by Fanzhe on 5/28/2017.
+// Windows port by Frits Makkinga (FM) on 13-1-2019
+// You can define your target platforn Windows or Linux by setting the define COM_PLATFORM to the value 1 or 2
 //
 
 #ifndef MODBUSPP_MODBUS_H
 #define MODBUSPP_MODBUS_H
 
-#include <string.h>
-#include <iostream>
+#define COM_PLATFORM 2 // Select your target platform
+#define COM_FOR_LINUX 1
+#define COM_FOR_WIN 2
+
+#if COM_PLATFORM == COM_FOR_WIN
+#define __USE_W32_SOCKETS 1
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <stdio.h>
+#pragma comment (lib, "Ws2_32.lib")
+
+#endif
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
+#include <sys/types.h>
+#if COM_PLATFORM == COM_FOR_LINUX
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#endif 
+#include <stdexcept>
+
+#include <string>	// Added FM: Please inlcude <string> instead of <string.h> to 
+					// avoid compiler error Error 2 error C2679: binary '<<' : no operator found which takes a right-hand operand of type 'std::string'.....
+#include <iostream>
 #include "modbus_exception.h"
 using namespace std;
 
@@ -55,6 +80,8 @@ private:
     int _slaveid ;
     string HOST;
     struct sockaddr_in _server;
+
+	struct addrinfo *   f_addrinfo;
 
     void modbus_build_request(uint8_t *to_send,int address, int func);
 

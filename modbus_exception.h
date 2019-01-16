@@ -17,7 +17,7 @@ using namespace std;
  */
 class modbus_exception : public exception {
 public:
-    string msg;
+    //string msg;
     virtual const char* what() const throw()
     {
         return "A Error In Modbus Happened!";
@@ -63,8 +63,8 @@ public:
  */
 class modbus_illegal_address_exception: public modbus_exception {
 public:
-    string msg = "test";
-    const char* what() const throw()
+    //string msg = "test";
+    virtual const char* what() const throw()
     {
         return "Illegal Address";
     }

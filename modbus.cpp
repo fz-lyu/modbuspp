@@ -1,9 +1,13 @@
 //
-// Created by Fanzhe on 5/28/2017.
-//
+// Created by Fanzhe on 5/28/2017
 
 #include "modbus.h"
+
+#if COM_PLATFORM == COM_FOR_LINUX
+#include <unistd.h>
 #include <arpa/inet.h>
+#endif
+
 using namespace std;
 
 
@@ -14,12 +18,20 @@ using namespace std;
  * @return     A Modbus Connector Object
  */
 modbus::modbus(string host, uint16_t port) {
-    HOST = host;
-    PORT = port;
-    _slaveid = 1;
-    _msg_id = 1;
-    _connected = false;
-
+#if COM_PLATFORM == COM_FOR_WIN
+	WSADATA w;
+	/* Open windows connection */
+	if (WSAStartup(0x0101, &w) != 0)
+	{
+		fprintf(stderr, "Could not open Windows connection.\n");
+		exit(0);
+	}
+#endif
+	HOST = host;
+	PORT = port;
+	_slaveid = 1;
+	_msg_id = 1;
+	_connected = false;
 }
 
 
@@ -29,6 +41,15 @@ modbus::modbus(string host, uint16_t port) {
  * @return      A Modbus Connector Object
  */
 modbus::modbus(string host) {
+#if COM_PLATFORM == COM_FOR_WIN
+	WSADATA w;
+	/* Open windows connection */
+	if (WSAStartup(0x0101, &w) != 0)
+	{
+		fprintf(stderr, "Could not open Windows connection.\n");
+		exit(0);
+	}
+#endif
     modbus(host, 502);
 }
 
@@ -37,6 +58,14 @@ modbus::modbus(string host) {
  * Destructor of Modbus Connector Object
  */
 modbus::~modbus(void) {
+	freeaddrinfo(f_addrinfo);
+#if COM_PLATFORM == COM_FOR_WIN
+	closesocket(_socket);
+	WSACleanup();
+	exit(0);
+#elif COM_PLATFORM == COM_FOR_LINUX
+	close(f_socket);
+#endif
 }
 
 
@@ -55,33 +84,67 @@ void modbus::modbus_set_slave_id(int id) {
  * @return   If A Connection Is Successfully Built
  */
 bool modbus::modbus_connect() {
+
     if(HOST == "" || PORT == 0) {
         std::cout << "Missing Host and Port" << std::endl;
         return false;
     } else {
-        std::cout << "Found Proper Host "<< HOST << " and Port " <<PORT <<std::endl;
+        std::cout << "Found Proper Host " << HOST << " and Port " << PORT << std::endl;
     }
 
-    _socket = socket(AF_INET, SOCK_STREAM, 0);
+	char decimal_port[16];
+	snprintf(decimal_port, sizeof(decimal_port), "%d", PORT);
+	decimal_port[sizeof(decimal_port) / sizeof(decimal_port[0]) - 1] = '\0';
+
+	struct addrinfo hints;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;//AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;//SOCK_DGRAM;
+	hints.ai_protocol = IPPROTO_TCP;
+	int r(getaddrinfo(HOST.c_str(), decimal_port, &hints, &f_addrinfo));
+	if (r != 0 || f_addrinfo == NULL)
+	{
+		std::cout << "invalid address or port for UDP socket: \"" << HOST << ":" << decimal_port << "\"" << std::endl;
+	}
+#if COM_PLATFORM == COM_FOR_WIN
+	_socket = socket(f_addrinfo->ai_family, SOCK_STREAM, IPPROTO_TCP);
+#elif COM_PLATFORM == COM_FOR_LINUX
+_socket = socket(f_addrinfo->ai_family, SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_UDP);
+#endif
+
+    //_socket = socket(AF_INET, SOCK_STREAM, 0);
     if(_socket == -1) {
-        std::cout <<"Error Opening Socket" <<std::endl;
+        std::cout <<"Error Opening Socket" << std::endl;
+#if COM_PLATFORM == COM_FOR_WIN
+		WSACleanup();
+#endif
         return false;
     } else {
         std::cout <<"Socket Opened Successfully" << std::endl;
     }
 
-    _server.sin_family = AF_INET;
-    _server.sin_addr.s_addr = inet_addr(HOST.c_str());
-    _server.sin_port = htons(PORT);
+	r = connect(_socket, f_addrinfo->ai_addr, f_addrinfo->ai_addrlen);
+	if (r != 0)
+	{
+		freeaddrinfo(f_addrinfo);
+#if COM_PLATFORM == COM_FOR_LINUX
+		close(_socket);
+		std::cout << "Linux: could not bind UDP socket with: \"" << HOST << ":" << decimal_port << "\"" << std::endl;
+#elif COM_PLATFORM == COM_FOR_WIN
+		closesocket(_socket);
+		std::cout << "Windows: could not bind UDP socket with: \"" << HOST << ":" << decimal_port << "\"" << std::endl;
+		WSACleanup();
+#endif
+		return false;
+	}
 
-    if (connect(_socket, (struct sockaddr*)&_server, sizeof(_server)) < 0) {
-        std::cout<< "Connection Error" << std::endl;
-        return false;
-    }
+	std::cout << "Connected" << std::endl;
+	_connected = true;
+	return true;
 
-    std::cout<< "Connected" <<std::endl;
-    _connected = true;
-    return true;
+
+
+
 }
 
 
@@ -89,7 +152,11 @@ bool modbus::modbus_connect() {
  * Close the Modbus/TCP Connection
  */
 void modbus::modbus_close() {
-    close(_socket);
+#if COM_PLATFORM == COM_FOR_LINUX
+	close(_socket);
+#elif COM_PLATFORM == COM_FOR_WIN
+	closesocket(_socket);
+#endif
     std::cout <<"Socket Closed" <<std::endl;
 }
 
@@ -122,14 +189,19 @@ void modbus::modbus_build_request(uint8_t *to_send, int address, int func) {
  */
 void modbus::modbus_write(int address, int amount, int func, uint16_t *value) {
     if(func == WRITE_COIL || func == WRITE_REG) {
-        uint8_t to_send[12];
+        uint8_t* to_send = new uint8_t[12];
         modbus_build_request(to_send, address, func);
         to_send[5] = 6;
         to_send[10] = (uint8_t) (value[0] >> 8);
         to_send[11] = (uint8_t) (value[0] & 0x00FF);
+		printf("Write single coils or single reg function code 5 or 6 \n");
         modbus_send(to_send, 12);
+		
+		//for (int j = 0; j < 12;j++)
+			//printf("%0X\n", to_send[j]);
+		//printf("\n");
     } else if(func == WRITE_REGS){
-        uint8_t to_send[13 + 2 * amount];
+        uint8_t* to_send = new uint8_t[13 + 2 * amount]; // updated by FM, uint8_t to_send[13 + 2 * amount];
         modbus_build_request(to_send, address, func);
         to_send[5] = (uint8_t) (5 + 2 * amount);
         to_send[10] = (uint8_t) (amount >> 8);
@@ -139,18 +211,29 @@ void modbus::modbus_write(int address, int amount, int func, uint16_t *value) {
             to_send[13 + 2 * i] = (uint8_t) (value[i] >> 8);
             to_send[14 + 2 * i] = (uint8_t) (value[i] & 0x00FF);
         }
+		printf("Write registers function code 10=16\n");
         modbus_send(to_send, 13 + 2 * amount);
+		
+		//for (int j = 0; j < 13 + 2 * amount;j++)
+			//printf("%0X\n", to_send[j]);
+		//printf("\n");
     } else if(func == WRITE_COILS) {
-        uint8_t to_send[14 + (amount -1) / 8 ];
+        uint8_t * to_send = new uint8_t[14 + (amount -1) / 8 ];// updated by FM, uint8_t to_send[14 + (amount -1) / 8];
+		memset(to_send, 0, 14 + (amount - 1) / 8);
         modbus_build_request(to_send, address, func);
         to_send[5] = (uint8_t) (7 + (amount -1) / 8);
         to_send[10] = (uint8_t) (amount >> 8);
-        to_send[11] = (uint8_t) (amount >> 8);
+        to_send[11] = (uint8_t) amount; // updated FM (uint8_t) (amount >> 8);
         to_send[12] = (uint8_t) ((amount + 7) / 8);
         for(int i = 0; i < amount; i++) {
             to_send[13 + (i - 1) / 8] += (uint8_t) (value[i] << (i % 8));
         }
+		printf("Write coils function code 0F=15\n");
         modbus_send(to_send, 14 + (amount - 1) / 8);
+		
+		//for (int j = 0; j < 14 + (amount - 1) / 8;j++)
+			//printf("%d = %0X\n",j, to_send[j]);
+		//printf("\n");
     }
 }
 
@@ -245,27 +328,36 @@ void modbus::modbus_read_input_registers(int address, int amount, uint16_t *buff
  * @param buffer      Buffer to Store Data Read from Coils
  */
 void modbus::modbus_read_coils(int address, int amount, bool *buffer) {
-    if(_connected) {
-        if(amount > 2040 || address > 65535) {
-            throw modbus_amount_exception();
-        }
-        modbus_read(address, amount, READ_COILS);
-        uint8_t to_rec[MAX_MSG_LENGTH];
-        ssize_t k = modbus_receive(to_rec);
-        try {
-            modbus_error_handle(to_rec, READ_COILS);
-            for(int i = 0; i < amount; i++) {
-                buffer[i] = (bool) ((to_rec[9 + i / 8] >> (i % 8)) & 1);
-            }
-        } catch (exception &e) {
-            cout<<e.what()<<endl;
-            delete(&to_rec);
-            delete(&k);
-            throw e;
-        }
-    } else {
-        throw modbus_connect_exception();
-    }
+	try // Added by FM: try catch block, please correct all other functions
+	{
+		if (_connected) {
+			if (amount > 2040 || address > 65535) {
+				throw modbus_amount_exception();
+			}
+			modbus_read(address, amount, READ_COILS);
+			uint8_t to_rec[MAX_MSG_LENGTH];
+			ssize_t k = modbus_receive(to_rec);
+			try {
+				modbus_error_handle(to_rec, READ_COILS);
+				for (int i = 0; i < amount; i++) {
+					buffer[i] = (bool)((to_rec[9 + i / 8] >> (i % 8)) & 1);
+				}
+			}
+			catch (exception &e) {
+				cout << e.what() << endl;
+				delete(&to_rec);
+				delete(&k);
+				throw e;
+			}
+		}
+		else {
+			throw modbus_connect_exception();
+		}
+	} // end try
+	catch (exception &e)
+	{
+		cout << e.what() << endl;
+	}
 }
 
 
@@ -370,8 +462,8 @@ void modbus::modbus_write_coils(int address, int amount, bool *value) {
         if(address > 65535 || amount > 65535) {
             throw modbus_amount_exception();
         }
-        uint16_t temp[amount];
-        for(int i = 0; i < 4; i++) {
+        uint16_t* temp = new uint16_t[amount];
+        for(int i = 0; i < amount; i++) { // updated by FM for(int i = 0; i < 4; i++) {
             temp[i] = (uint16_t)value[i];
         }
         modbus_write(address, amount, WRITE_COILS,  temp);
@@ -419,6 +511,33 @@ void modbus::modbus_write_registers(int address, int amount, uint16_t *value) {
     }
 }
 
+void print_to_send(uint8_t *to_send, int length)
+{
+	printf("modbus_send\n");
+	for (int j = 0; j < length;j++)
+	{
+		if (j == 6)
+			printf("Slave Address: ");
+		if (j == 7)
+			printf("Function code: ");
+		if (j == 8)
+			printf("Start add HI : ");
+		if (j == 9)
+			printf("Start add LO : ");
+		if (j == 10)
+			printf("No.Points HI : ");
+		if (j == 11)
+			printf("No.Points LO : ");
+		if (j == 12)
+			printf("Byte count   : ");
+		if (j == 13)
+			printf("Force data HI: ");
+		if (j == 14)
+			printf("Force data LO: ");
+		printf("%d = %0X\n", j, to_send[j]);
+	}
+	printf("\n");
+}
 
 /**
  * Data Sender
@@ -428,7 +547,8 @@ void modbus::modbus_write_registers(int address, int amount, uint16_t *value) {
  */
 ssize_t modbus::modbus_send(uint8_t *to_send, int length) {
     _msg_id++;
-    return send(_socket, to_send, (size_t)length, 0);
+	print_to_send(to_send, length);
+    return send(_socket, (const char*) to_send, (size_t)length, 0); // FM update with: (const char*) 
 }
 
 
