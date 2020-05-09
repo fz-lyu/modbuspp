@@ -1,6 +1,6 @@
 
 ### CMake template
-CMakeLists.txt
 .idea
-
+cmake-build-debug
 .DS_Store
+.vscode

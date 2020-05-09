@@ -1,11 +1,31 @@
-# MODBUS++  [(MODBSPP)](https://github.com/fanzhe98/modbuspp.git)   V0.1
-MODBUS++ (MODBUSPP) is an open source c++ class/ library making an encapsulation of [Modbus](https://en.wikipedia.org/wiki/Modbus) TCP Protocol published by Modicon (Now Schneider Electirc).
+# MODBUS++  [(MODBSPP)](https://github.com/fanzhe98/modbuspp.git)   V0.2
 
-MODBUS++ is based on Object-Oriented Programming. While it keeps the efficiency of C++ Code , it provides a higher level of abstraction than other C Modbus Library. Generally, it is easier for programmers to use in their development requiring MODBUS TCP Protocol. Compared to other known modbus library, such as libmodbus, MODBUS++ is providing a more OOP friendly syntaxes.
+# 0 Info, Updates and Discalimer
+## 0.0 Info
+MODBUS++ (MODBUSPP) is an header-only open source c++ class/ library making an encapsulation of [Modbus](https://en.wikipedia.org/wiki/Modbus) TCP Protocol.
+
+MODBUS++ is providing a more OOP friendly syntax.
 
 The code has dependencies on libary on Linux for TCP/IP, if you want to use this in Windows, please check out winsock2 and rewrite portion of code of socket to be compatible with Windows operating system.
 
----
+## 0.1 Updates 
+
+UPDATES in V0.2 compared to V0.1):
+1. Cleand up some shitty code
+2. Removed exceptions, using error message instead
+3. Removed Enums, placing #define instead
+4. Fixed some bugs (referencing to [@konsolenritter](https://github.com/konsolenritter)'s fix)
+5. Combine files into a header only library
+
+## 0.2 Disclaimer
+The code was taken from one of my hack project and wrapped 
+into a header and I take no warranty or responsibility of the 
+code, as mentioned in license. Issues and emails are welcomed, 
+and I will do by best to reply. However I generally do NOT have 
+time to fix it oftenly, due to school and work. The code was 
+written within 5 hours and I knew shit/bugs/issues are in the 
+code, by indicating it with a version number. There are **NO** 
+points **HARRASING** me through email for anything unusable.
 
 # 1 Usage
 To use the library, please follow the steps below. Please note current library is only compatible with Linux distributions because of the socket library dependencies.
@@ -14,20 +34,32 @@ To use the library, please follow the steps below. Please note current library i
 Download the MODBUS++, you can:
    - Open your command window (cmd, shell, bash, etc.)
         > git clone https://github.com/fanzhe98/modbuspp.git
-   - Directly Download From the [Page](https://github.com/fanzhe98/modbuspp.git)
+   - Directly download from the page.
 
 ## 1.2 Include In your code
-To include Modbus++ in your code, just simply type this in the start of your program:
+Copy the "moodbus.h" to your include directory and include the code whenever appropriate:
    >  include "modbus.h"
-   >  include "modbus_exception.h"
    
----
+
 
 # 2 Getting Started with a Example
 ## 2.1 Getting the Example
 Checkout [example.cpp](https://github.com/fanzhe98/modbuspp/blob/master/example.cpp) for a example usage of MODBUSPP. Please note that the code should be compiled using c++11 compilers.
+A sample CMakeLists.txt is included. To build example:
+### 2.1.1 CMAKE 
+```shell script
+mkdir build
+cd build
+cmake ..
+make
+```
+### 2.1.2 G++
+```shell script
+g++ example.cpp --std=c++11 -o example
+```
+
 ## 2.2 Tutorials
-Let's break the code down, before you read this, BE SURE to have a reference to [example.cpp](https://github.com/fanzhe98/modbuspp/blob/master/example.cpp). The example shows basic usages of how to create a modbus client connecting to a modbus server and perform modbus operations in your program.
+Let's break the code down, before you read this, reference to [example.cpp](https://github.com/fanzhe98/modbuspp/blob/master/example.cpp). The example shows basic usages of how to create a modbus client connecting to a modbus server and perform modbus operations in your program.
 ### Include the header
 
 To start with, be sure to include the modbus.h header in your program
