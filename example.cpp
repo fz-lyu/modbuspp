@@ -59,6 +59,5 @@ int main(int argc, char **argv)
 
     // close connection and free the memory
     mb.modbus_close();
-    delete(&mb);
     return 0;
 }
