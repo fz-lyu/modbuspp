@@ -9,8 +9,22 @@
 #include <iostream>
 #include <stdint.h>
 
-#ifdef __linux__
-// LINUX socket
+
+#if _WIN32
+// WINDOWS socket
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+
+#include <winsock2.h>
+#pragma comment (lib, "Ws2_32.lib")
+using X_SOCKET = SOCKET;
+using ssize_t = int;
+
+#define X_ISVALIDSOCKET(s) ((s) != INVALID_SOCKET)
+#define X_CLOSE_SOCKET(s) closesocket(s)
+#define X_ISCONNECTSUCCEED(s) ((s) != SOCKET_ERROR)
+
+#else
+// Berkeley socket
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -19,16 +33,7 @@ using X_SOCKET = int;
 
 #define X_ISVALIDSOCKET(s) ((s) >= 0)
 #define X_CLOSE_SOCKET(s) close(s)
-#define X_ISCONNECSUCCEED(s) ((s) >= 0)
-#elif _WIN32
-// WINDOWS socket
-#include <winsock2.h>
-#pragma comment (lib, "Ws2_32.lib")
-using X_SOCKET = SOCKET;
-
-#define X_ISVALIDSOCKET(s) ((s) != INVALID_SOCKET)
-#define X_CLOSE_SOCKET(s) closesocket(s)
-#define X_ISCONNECSUCCEED(s) ((s) != SOCKET_ERROR)
+#define X_ISCONNECTSUCCEED(s) ((s) >= 0)
 #endif
 
 using SOCKADDR = struct sockaddr;
@@ -96,11 +101,11 @@ public:
 private:
     bool _connected{};
     uint16_t PORT{};
-    X_SOCKET _socket{};
-    uint _msg_id{};
+    uint32_t _msg_id{};
     int _slaveid{};
     std::string HOST;
 
+    X_SOCKET _socket{};
     SOCKADDR_IN _server{};
 
 #ifdef _WIN32
@@ -188,17 +193,21 @@ bool modbus::modbus_connect() {
         std::cout <<"Socket Opened Successfully" << std::endl;
     }
 
-    struct timeval timeout{};
-    timeout.tv_sec  = 20;  // after 20 seconds connect() will timeout
+#ifdef WIN32
+    const DWORD timeout = 20;
+#else
+    struct timeval timeout {};
+    timeout.tv_sec = 20;  // after 20 seconds connect() will timeout
     timeout.tv_usec = 0;
-    setsockopt(_socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-    setsockopt(_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+#endif
 
+    setsockopt(_socket, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout));
+    setsockopt(_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
     _server.sin_family = AF_INET;
     _server.sin_addr.s_addr = inet_addr(HOST.c_str());
     _server.sin_port = htons(PORT);
 
-    if (!X_ISCONNECSUCCEED(connect(_socket, (SOCKADDR*)&_server, sizeof(_server)))) {
+    if (!X_ISCONNECTSUCCEED(connect(_socket, (SOCKADDR*)&_server, sizeof(_server)))) {
         std::cout<< "Connection Error" << std::endl;
 #ifdef _WIN32
         WSACleanup();
@@ -231,7 +240,7 @@ void modbus::modbus_close() const {
  * @param func      Modbus Functional Code
  */
 void modbus::modbus_build_request(uint8_t *to_send, uint16_t address, int func) const {
-    to_send[0] = (uint8_t) _msg_id >> 8u;
+    to_send[0] = (uint8_t) (_msg_id >> 8u);
     to_send[1] = (uint8_t) (_msg_id & 0x00FFu);
     to_send[2] = 0;
     to_send[3] = 0;
@@ -252,15 +261,16 @@ void modbus::modbus_build_request(uint8_t *to_send, uint16_t address, int func) 
  */
 int modbus::modbus_write(uint16_t address, uint16_t amount, int func, const uint16_t *value) {
     int status = 0;
+    uint8_t* to_send;
     if(func == WRITE_COIL || func == WRITE_REG) {
-        uint8_t to_send[12];
+        to_send = new uint8_t[12];
         modbus_build_request(to_send, address, func);
         to_send[5] = 6;
         to_send[10] = (uint8_t) (value[0] >> 8u);
         to_send[11] = (uint8_t) (value[0] & 0x00FFu);
         status = modbus_send(to_send, 12);
     } else if(func == WRITE_REGS){
-        uint8_t to_send[13 + 2 * amount];
+        to_send = new uint8_t[13 + 2 * amount];
         modbus_build_request(to_send, address, func);
         to_send[5] = (uint8_t) (7 + 2 * amount);
         to_send[10] = (uint8_t) (amount >> 8u);
@@ -272,7 +282,7 @@ int modbus::modbus_write(uint16_t address, uint16_t amount, int func, const uint
         }
         status = modbus_send(to_send, 13 + 2 * amount);
     } else if(func == WRITE_COILS) {
-        uint8_t to_send[14 + (amount -1) / 8 ];
+        to_send = new uint8_t[14 + (amount -1) / 8 ];
         modbus_build_request(to_send, address, func);
         to_send[5] = (uint8_t) (7 + (amount + 7) / 8);
         to_send[10] = (uint8_t) (amount >> 8u);
@@ -285,6 +295,7 @@ int modbus::modbus_write(uint16_t address, uint16_t amount, int func, const uint
         }
         status = modbus_send(to_send, 14 + (amount - 1) / 8);
     }
+    delete[] to_send;
     return status;
 
 }
@@ -324,8 +335,8 @@ int modbus::modbus_read_holding_registers(uint16_t address, uint16_t amount, uin
         }
         modbuserror_handle(to_rec, READ_REGS);
         if(err) return err_no;
-        for(uint i = 0; i < amount; i++) {
-            buffer[i] = ((uint16_t)to_rec[9u + 2u * i]) << 8u;
+        for(auto i = 0; i < amount; i++) {
+            buffer[i] =  ((uint16_t) to_rec[9u + 2u * i]) << 8u;
             buffer[i] += (uint16_t) to_rec[10u + 2u * i];
         }
         return 0;
@@ -354,7 +365,7 @@ int modbus::modbus_read_input_registers(uint16_t address, uint16_t amount, uint1
         }
         modbuserror_handle(to_rec, READ_INPUT_REGS);
         if(err) return err_no;
-        for(uint i = 0; i < amount; i++) {
+        for(auto i = 0; i < amount; i++) {
             buffer[i] = ((uint16_t)to_rec[9u + 2u * i]) << 8u;
             buffer[i] += (uint16_t) to_rec[10u + 2u * i];
         }
@@ -388,7 +399,7 @@ int modbus::modbus_read_coils(uint16_t address, uint16_t amount, bool *buffer) {
         }
         modbuserror_handle(to_rec, READ_COILS);
         if(err) return err_no;
-        for(uint i = 0; i < amount; i++) {
+        for(auto i = 0; i < amount; i++) {
             buffer[i] = (bool) ((to_rec[9u + i / 8u] >> (i % 8u)) & 1u);
         }
         return 0;
@@ -420,7 +431,7 @@ int modbus::modbus_read_input_bits(uint16_t address, uint16_t amount, bool* buff
             return BAD_CON;
         }
         if(err) return err_no;
-        for(uint i = 0; i < amount; i++) {
+        for(auto i = 0; i < amount; i++) {
             buffer[i] = (bool) ((to_rec[9u + i / 8u] >> (i % 8u)) & 1u);
         }
         modbuserror_handle(to_rec, READ_INPUT_BITS);
@@ -491,11 +502,12 @@ int modbus::modbus_write_register(uint16_t address, const uint16_t& value) {
  */
 int modbus::modbus_write_coils(uint16_t address, uint16_t amount, const bool *value) {
     if(_connected) {
-        uint16_t temp[amount];
+        uint16_t* temp = new uint16_t[amount];
         for(int i = 0; i < amount; i++) {
             temp[i] = (uint16_t)value[i];
         }
         modbus_write(address, amount, WRITE_COILS, temp);
+        delete[] temp;
         uint8_t to_rec[MAX_MSG_LENGTH];
         ssize_t k = modbus_receive(to_rec);
         if (k == -1) {
@@ -546,7 +558,7 @@ int modbus::modbus_write_registers(uint16_t address, uint16_t amount, const uint
  */
 ssize_t modbus::modbus_send(uint8_t *to_send, size_t length) {
     _msg_id++;
-    return send(_socket, to_send, (size_t)length, 0);
+    return send(_socket, (const char*)to_send, (size_t)length, 0);
 }
 
 
