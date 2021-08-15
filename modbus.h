@@ -58,12 +58,12 @@ private:
     struct sockaddr_in _server{};
 
 
-    inline void modbus_build_request(uint8_t *to_send, uint address, int func) const;
+    inline void modbus_build_request(uint8_t *to_send, uint16_t address, int func) const;
 
-    int modbus_read(int address, uint amount, int func);
-    int modbus_write(int address, uint amount, int func, const uint16_t *value);
+    int modbus_read(uint16_t address, uint16_t amount, int func);
+    int modbus_write(uint16_t address, uint16_t amount, int func, const uint16_t *value);
 
-    inline ssize_t modbus_send(uint8_t *to_send, int length);
+    inline ssize_t modbus_send(uint8_t *to_send, size_t length);
     inline ssize_t modbus_receive(uint8_t *buffer) const;
 
     void modbuserror_handle(const uint8_t *msg, int func);
@@ -88,15 +88,15 @@ public:
 
     void modbus_set_slave_id(int id);
 
-    int  modbus_read_coils(int address, int amount, bool* buffer);
-    int  modbus_read_input_bits(int address, int amount, bool* buffer);
-    int  modbus_read_holding_registers(int address, int amount, uint16_t *buffer);
-    int  modbus_read_input_registers(int address, int amount, uint16_t *buffer);
+    int  modbus_read_coils(uint16_t address, uint16_t amount, bool* buffer);
+    int  modbus_read_input_bits(uint16_t address, uint16_t amount, bool* buffer);
+    int  modbus_read_holding_registers(uint16_t address, uint16_t amount, uint16_t *buffer);
+    int  modbus_read_input_registers(uint16_t address, uint16_t amount, uint16_t *buffer);
 
-    int  modbus_write_coil(int address, const bool& to_write);
-    int  modbus_write_register(int address, const uint16_t& value);
-    int  modbus_write_coils(int address, int amount, const bool *value);
-    int  modbus_write_registers(int address, int amount, const uint16_t *value);
+    int  modbus_write_coil(uint16_t address, const bool& to_write);
+    int  modbus_write_register(uint16_t address, const uint16_t& value);
+    int  modbus_write_coils(uint16_t address, uint16_t amount, const bool *value);
+    int  modbus_write_registers(uint16_t address, uint16_t amount, const uint16_t *value);
 
 
 };
@@ -193,7 +193,7 @@ void modbus::modbus_close() const {
  * @param address   Reference Address
  * @param func      Modbus Functional Code
  */
-void modbus::modbus_build_request(uint8_t *to_send, uint address, int func) const {
+void modbus::modbus_build_request(uint8_t *to_send, uint16_t address, int func) const {
     to_send[0] = (uint8_t) _msg_id >> 8u;
     to_send[1] = (uint8_t) (_msg_id & 0x00FFu);
     to_send[2] = 0;
@@ -213,7 +213,7 @@ void modbus::modbus_build_request(uint8_t *to_send, uint address, int func) cons
  * @param func      Modbus Functional Code
  * @param value     Data to Be Written
  */
-int modbus::modbus_write(int address, uint amount, int func, const uint16_t *value) {
+int modbus::modbus_write(uint16_t address, uint16_t amount, int func, const uint16_t *value) {
     int status = 0;
     if(func == WRITE_COIL || func == WRITE_REG) {
         uint8_t to_send[12];
@@ -259,7 +259,7 @@ int modbus::modbus_write(int address, uint amount, int func, const uint16_t *val
  * @param amount    Amount of Data to Read
  * @param func      Modbus Functional Code
  */
-int modbus::modbus_read(int address, uint amount, int func){
+int modbus::modbus_read(uint16_t address, uint16_t amount, int func){
     uint8_t to_send[12];
     modbus_build_request(to_send, address, func);
     to_send[5] = 6;
@@ -276,12 +276,8 @@ int modbus::modbus_read(int address, uint amount, int func){
  * @param amount     Amount of Registers to Read
  * @param buffer     Buffer to Store Data Read from Registers
  */
-int modbus::modbus_read_holding_registers(int address, int amount, uint16_t *buffer) {
+int modbus::modbus_read_holding_registers(uint16_t address, uint16_t amount, uint16_t *buffer) {
     if(_connected) {
-        if(amount > 65535 || address > 65535) {
-            set_bad_input();
-            return EX_BAD_DATA;
-        }
         modbus_read(address, amount, READ_REGS);
         uint8_t to_rec[MAX_MSG_LENGTH];
         ssize_t k = modbus_receive(to_rec);
@@ -310,12 +306,8 @@ int modbus::modbus_read_holding_registers(int address, int amount, uint16_t *buf
  * @param amount      Amount of Registers to Read
  * @param buffer      Buffer to Store Data Read from Registers
  */
-int modbus::modbus_read_input_registers(int address, int amount, uint16_t *buffer) {
+int modbus::modbus_read_input_registers(uint16_t address, uint16_t amount, uint16_t *buffer) {
     if(_connected){
-        if(amount > 65535 || address > 65535) {
-            set_bad_input();
-            return EX_BAD_DATA;
-        }
         modbus_read(address, amount, READ_INPUT_REGS);
         uint8_t to_rec[MAX_MSG_LENGTH];
         ssize_t k = modbus_receive(to_rec);
@@ -344,9 +336,9 @@ int modbus::modbus_read_input_registers(int address, int amount, uint16_t *buffe
  * @param amount      Amount of Coils to Read
  * @param buffer      Buffer to Store Data Read from Coils
  */
-int modbus::modbus_read_coils(int address, int amount, bool *buffer) {
+int modbus::modbus_read_coils(uint16_t address, uint16_t amount, bool *buffer) {
     if(_connected) {
-        if(amount > 2040 || address > 65535) {
+        if(amount > 2040) {
             set_bad_input();
             return EX_BAD_DATA;
         }
@@ -377,9 +369,9 @@ int modbus::modbus_read_coils(int address, int amount, bool *buffer) {
  * @param amount    Amount of Bits to Read
  * @param buffer    Buffer to store Data Read from Input Bits
  */
-int modbus::modbus_read_input_bits(int address, int amount, bool* buffer) {
+int modbus::modbus_read_input_bits(uint16_t address, uint16_t amount, bool* buffer) {
     if(_connected) {
-        if(amount > 2040 || address > 65535) {
+        if(amount > 2040) {
             set_bad_input();
             return EX_BAD_DATA;
         }
@@ -408,12 +400,8 @@ int modbus::modbus_read_input_bits(int address, int amount, bool* buffer) {
  * @param address    Reference Address
  * @param to_write   Value to be Written to Coil
  */
-int modbus::modbus_write_coil(int address, const bool& to_write) {
+int modbus::modbus_write_coil(uint16_t address, const bool& to_write) {
     if(_connected) {
-        if(address > 65535) {
-            set_bad_input();
-            return EX_BAD_DATA;
-        }
         int value = to_write * 0xFF00;
         modbus_write(address, 1, WRITE_COIL, (uint16_t *)&value);
         uint8_t to_rec[MAX_MSG_LENGTH];
@@ -438,12 +426,8 @@ int modbus::modbus_write_coil(int address, const bool& to_write) {
  * @param address   Reference Address
  * @param value     Value to Be Written to Register
  */
-int modbus::modbus_write_register(int address, const uint16_t& value) {
+int modbus::modbus_write_register(uint16_t address, const uint16_t& value) {
     if(_connected) {
-        if(address > 65535) {
-            set_bad_input();
-            return EX_BAD_DATA;
-        }
         modbus_write(address, 1, WRITE_REG, &value);
         uint8_t to_rec[MAX_MSG_LENGTH];
         ssize_t k = modbus_receive(to_rec);
@@ -468,12 +452,8 @@ int modbus::modbus_write_register(int address, const uint16_t& value) {
  * @param amount   Amount of Coils to Write
  * @param value    Values to Be Written to Coils
  */
-int modbus::modbus_write_coils(int address, int amount, const bool *value) {
+int modbus::modbus_write_coils(uint16_t address, uint16_t amount, const bool *value) {
     if(_connected) {
-        if(address > 65535 || amount > 65535) {
-            set_bad_input();
-            return EX_BAD_DATA;
-        }
         uint16_t temp[amount];
         for(int i = 0; i < amount; i++) {
             temp[i] = (uint16_t)value[i];
@@ -502,12 +482,8 @@ int modbus::modbus_write_coils(int address, int amount, const bool *value) {
  * @param amount  Amount of Value to Write
  * @param value   Values to Be Written to the Registers
  */
-int modbus::modbus_write_registers(int address, int amount, const uint16_t *value) {
+int modbus::modbus_write_registers(uint16_t address, uint16_t amount, const uint16_t *value) {
     if(_connected) {
-        if(address > 65535 || amount > 65535) {
-            set_bad_input();
-            return EX_BAD_DATA;
-        }
         modbus_write(address, amount, WRITE_REGS, value);
         uint8_t to_rec[MAX_MSG_LENGTH];
         ssize_t k = modbus_receive(to_rec);
@@ -531,7 +507,7 @@ int modbus::modbus_write_registers(int address, int amount, const uint16_t *valu
  * @param length  Length of the Request
  * @return        Size of the request
  */
-ssize_t modbus::modbus_send(uint8_t *to_send, int length) {
+ssize_t modbus::modbus_send(uint8_t *to_send, size_t length) {
     _msg_id++;
     return send(_socket, to_send, (size_t)length, 0);
 }
