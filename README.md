@@ -17,7 +17,7 @@ UPDATES in v0.3 compared to V0.2:
 3. Initial Windows support (in dev, not fully tested)
 4. Logging as Option
 5. Cmake install script
-
+6. Pasting licensing information in file
 
 # 1 Usage
 To use the library, please follow the steps below. Please note current library is only compatible with Linux distributions because of the socket library dependencies.
