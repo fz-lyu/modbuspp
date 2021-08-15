@@ -9,7 +9,16 @@ else()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 endif()
 
-set(SOURCE_FILES example.cpp)
-include_directories(./)
-
-add_executable(modbuspp_example ${SOURCE_FILES})
+# BUILD INTERFACE LIB
+install(FILES
+    "modbus.h"
+    DESTINATION
+    include/modbuspp
+)
+# BUILD EXAMPLE
+set(EXAMPLE_FILES example/example.cpp)
+add_executable(modbuspp_example ${EXAMPLE_FILES})
+target_include_directories(modbuspp_example
+PUBLIC
+    .
+)
