@@ -539,6 +539,8 @@ void modbus::set_bad_input() {
  * @param func  Modbus Functional Code
  */
 void modbus::modbuserror_handle(const uint8_t *msg, int func) {
+    err = false;
+    error_msg = "NO ERR";
     if(msg[7] == func + 0x80) {
         err = true;
         switch(msg[8]){
@@ -577,8 +579,6 @@ void modbus::modbuserror_handle(const uint8_t *msg, int func) {
                 break;
         }
     }
-    err = false;
-    error_msg = "NO ERR";
 }
 
 #endif //MODBUSPP_MODBUS_H
