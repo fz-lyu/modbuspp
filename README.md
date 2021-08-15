@@ -15,7 +15,8 @@ UPDATES in v0.3 compared to V0.2:
 1. Bug Fixing
 2. Type fixing
 3. Initial Windows support (in dev, not fully tested)
-4. Cmake install script
+4. Logging as Option
+5. Cmake install script
 
 
 # 1 Usage
@@ -41,6 +42,8 @@ Download the MODBUS++, you can:
    and include the code whenever appropriate
    > include "modbuspp/modbus.h"
 
+## 1.3 Logging as Option
+To enable logging, simply set `ENABLE_MODBUSPP_LOGGING` in your compile option, see CMakeLists.txt with example.
 
 # 2 Getting Started with a Example
 ## 2.1 Getting the Example

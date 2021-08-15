@@ -1,3 +1,4 @@
 {
-    "C_Cpp.formatting": "Default"
+    "C_Cpp.formatting": "Default",
+    "editor.formatOnSave": true
 }

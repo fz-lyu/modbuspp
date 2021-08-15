@@ -6,10 +6,17 @@
 #define MODBUSPP_MODBUS_H
 
 #include <cstring>
-#include <iostream>
 #include <stdint.h>
+#include <string>
 
-#if _WIN32
+#ifdef ENABLE_MODBUSPP_LOGGING
+#include <cstdio>
+#define LOG(fmt, ...) printf("[ modbuspp ]" fmt, ##__VA_ARGS__)
+#else
+#define LOG(...) (void)0
+#endif
+
+#ifdef _WIN32
 // WINDOWS socket
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 
@@ -165,12 +172,12 @@ bool modbus::modbus_connect()
 {
     if (HOST.empty() || PORT == 0)
     {
-        std::cout << "Missing Host and Port" << std::endl;
+        LOG("Missing Host and Port");
         return false;
     }
     else
     {
-        std::cout << "Found Proper Host " << HOST << " and Port " << PORT << std::endl;
+        LOG("Found Proper Host %s and Port %d", HOST.c_str(), PORT);
     }
 
 #ifdef _WIN32
@@ -183,7 +190,7 @@ bool modbus::modbus_connect()
     _socket = socket(AF_INET, SOCK_STREAM, 0);
     if (!X_ISVALIDSOCKET(_socket))
     {
-        std::cout << "Error Opening Socket" << std::endl;
+        LOG("Error Opening Socket");
 #ifdef _WIN32
         WSACleanup();
 #endif
@@ -191,7 +198,7 @@ bool modbus::modbus_connect()
     }
     else
     {
-        std::cout << "Socket Opened Successfully" << std::endl;
+        LOG("Socket Opened Successfully");
     }
 
 #ifdef WIN32
@@ -212,14 +219,14 @@ bool modbus::modbus_connect()
 
     if (!X_ISCONNECTSUCCEED(connect(_socket, (SOCKADDR *)&_server, sizeof(_server))))
     {
-        std::cout << "Connection Error" << std::endl;
+        LOG("Connection Error");
 #ifdef _WIN32
         WSACleanup();
 #endif
         return false;
     }
 
-    std::cout << "Connected" << std::endl;
+    LOG("Connected");
     _connected = true;
     return true;
 }
@@ -233,7 +240,7 @@ void modbus::modbus_close() const
 #ifdef _WIN32
     WSACleanup();
 #endif
-    std::cout << "Socket Closed" << std::endl;
+    LOG("Socket Closed");
 }
 
 /**
