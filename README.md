@@ -60,6 +60,8 @@ make
 ```shell script
 g++ example.cpp --std=c++11 -o example
 ```
+### 2.1.3 MSCV
+Open your Visual Studio to compile the project
 
 ## 2.2 Tutorials
 Let's break the code down, before you read this, reference to [example.cpp](https://github.com/fanzhe98/modbuspp/blob/master/example.cpp). The example shows basic usages of how to create a modbus client connecting to a modbus server and perform modbus operations in your program.
