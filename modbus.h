@@ -7,16 +7,15 @@
 
 #include <cstring>
 #include <iostream>
-#include <unistd.h>
 
 #ifdef __linux__
 // LINUX socket
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 using X_SOCKET = int;
-using X_SOCKADDR = struct sockaddr;
-using X_SOCKADDR_IN = struct sockaddr_in;
+
 #define X_ISVALIDSOCKET(s) ((s) >= 0)
 #define X_CLOSE_SOCKET(s) close(s)
 #define X_ISCONNECSUCCEED(s) ((s) >= 0)
@@ -25,15 +24,14 @@ using X_SOCKADDR_IN = struct sockaddr_in;
 #include <winsock2.h>
 #pragma comment (lib, "Ws2_32.lib")
 using X_SOCKET = SOCKET;
-using X_SOCKADDR = SOCKET_ADDR;
-using X_SOCKADDR_IN = SOCKET_ADDR_IN;
 
 #define X_ISVALIDSOCKET(s) ((s) != INVALID_SOCKET)
 #define X_CLOSE_SOCKET(s) closesocket(s)
 #define X_ISCONNECSUCCEED(s) ((s) != SOCKET_ERROR)
 #endif
 
-
+using SOCKADDR = struct sockaddr;
+using SOCKADDR_IN = struct sockaddr_in;
 
 #define MAX_MSG_LENGTH 260
 
@@ -102,7 +100,7 @@ private:
     int _slaveid{};
     std::string HOST;
 
-    X_SOCKADDR_IN _server{};
+    SOCKADDR_IN _server{};
 
 #ifdef _WIN32
     WSADATA wsadata;
@@ -199,7 +197,7 @@ bool modbus::modbus_connect() {
     _server.sin_addr.s_addr = inet_addr(HOST.c_str());
     _server.sin_port = htons(PORT);
 
-    if (!X_ISCONNECSUCCEED(connect(_socket, (X_SOCKADDR*)&_server, sizeof(_server)))) {
+    if (!X_ISCONNECSUCCEED(connect(_socket, (SOCKADDR*)&_server, sizeof(_server)))) {
         std::cout<< "Connection Error" << std::endl;
 #ifdef _WIN32
         WSACleanup();

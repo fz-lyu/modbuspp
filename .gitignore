@@ -4,4 +4,5 @@
 cmake-build-debug
 .DS_Store
 .vscode
+.vs
 build
