@@ -7,6 +7,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <stdint.h>
 
 #ifdef __linux__
 // LINUX socket
