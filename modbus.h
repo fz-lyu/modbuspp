@@ -7,10 +7,32 @@
 
 #include <cstring>
 #include <iostream>
+#include <unistd.h>
+
+#ifdef __linux__
+// LINUX socket
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
+using X_SOCKET = int;
+using X_SOCKADDR = struct sockaddr;
+using X_SOCKADDR_IN = struct sockaddr_in;
+#define X_ISVALIDSOCKET(s) ((s) >= 0)
+#define X_CLOSE_SOCKET(s) close(s)
+#define X_ISCONNECSUCCEED(s) ((s) >= 0)
+#elif _WIN32
+// WINDOWS socket
+#include <winsock2.h>
+#pragma comment (lib, "Ws2_32.lib")
+using X_SOCKET = SOCKET;
+using X_SOCKADDR = SOCKET_ADDR;
+using X_SOCKADDR_IN = SOCKET_ADDR_IN;
+
+#define X_ISVALIDSOCKET(s) ((s) != INVALID_SOCKET)
+#define X_CLOSE_SOCKET(s) closesocket(s)
+#define X_ISCONNECSUCCEED(s) ((s) != SOCKET_ERROR)
+#endif
+
 
 
 #define MAX_MSG_LENGTH 260
@@ -47,38 +69,11 @@
  * Providing networking support and mobus operation support.
  */
 class modbus {
-private:
-    bool _connected{};
-    uint16_t PORT{};
-    int _socket{};
-    uint _msg_id{};
-    int _slaveid{};
-    std::string HOST;
-
-    struct sockaddr_in _server{};
-
-
-    inline void modbus_build_request(uint8_t *to_send, uint16_t address, int func) const;
-
-    int modbus_read(uint16_t address, uint16_t amount, int func);
-    int modbus_write(uint16_t address, uint16_t amount, int func, const uint16_t *value);
-
-    inline ssize_t modbus_send(uint8_t *to_send, size_t length);
-    inline ssize_t modbus_receive(uint8_t *buffer) const;
-
-    void modbuserror_handle(const uint8_t *msg, int func);
-
-    inline void set_bad_con();
-    inline void set_bad_input();
-
 
 public:
     bool err{};
     int err_no{};
     std::string error_msg;
-
-
-
 
     modbus(std::string host, uint16_t port);
     ~modbus();
@@ -98,6 +93,33 @@ public:
     int  modbus_write_coils(uint16_t address, uint16_t amount, const bool *value);
     int  modbus_write_registers(uint16_t address, uint16_t amount, const uint16_t *value);
 
+
+private:
+    bool _connected{};
+    uint16_t PORT{};
+    X_SOCKET _socket{};
+    uint _msg_id{};
+    int _slaveid{};
+    std::string HOST;
+
+    X_SOCKADDR_IN _server{};
+
+#ifdef _WIN32
+    WSADATA wsadata;
+#endif
+
+    inline void modbus_build_request(uint8_t *to_send, uint16_t address, int func) const;
+
+    int modbus_read(uint16_t address, uint16_t amount, int func);
+    int modbus_write(uint16_t address, uint16_t amount, int func, const uint16_t *value);
+
+    inline ssize_t modbus_send(uint8_t *to_send, size_t length);
+    inline ssize_t modbus_receive(uint8_t *buffer) const;
+
+    void modbuserror_handle(const uint8_t *msg, int func);
+
+    inline void set_bad_con();
+    inline void set_bad_input();
 
 };
 
@@ -146,12 +168,22 @@ bool modbus::modbus_connect() {
         std::cout << "Missing Host and Port" << std::endl;
         return false;
     } else {
-        std::cout << "Found Proper Host "<< HOST << " and Port " <<PORT <<std::endl;
+        std::cout << "Found Proper Host "<< HOST << " and Port " << PORT <<std::endl;
     }
 
+    #ifdef _WIN32
+        if (WSAStartup(0x0202, &wsadata))
+        {
+            return false;
+        }
+    #endif
+
     _socket = socket(AF_INET, SOCK_STREAM, 0);
-    if(_socket == -1) {
+    if(!X_ISVALIDSOCKET(_socket)) {
         std::cout <<"Error Opening Socket" <<std::endl;
+#ifdef _WIN32
+        WSACleanup();
+#endif
         return false;
     } else {
         std::cout <<"Socket Opened Successfully" << std::endl;
@@ -167,8 +199,11 @@ bool modbus::modbus_connect() {
     _server.sin_addr.s_addr = inet_addr(HOST.c_str());
     _server.sin_port = htons(PORT);
 
-    if (connect(_socket, (struct sockaddr*)&_server, sizeof(_server)) < 0) {
+    if (!X_ISCONNECSUCCEED(connect(_socket, (X_SOCKADDR*)&_server, sizeof(_server)))) {
         std::cout<< "Connection Error" << std::endl;
+#ifdef _WIN32
+        WSACleanup();
+#endif
         return false;
     }
 
@@ -182,7 +217,10 @@ bool modbus::modbus_connect() {
  * Close the Modbus/TCP Connection
  */
 void modbus::modbus_close() const {
-    close(_socket);
+    X_CLOSE_SOCKET(_socket);
+#ifdef _WIN32
+        WSACleanup();
+#endif
     std::cout <<"Socket Closed" <<std::endl;
 }
 
