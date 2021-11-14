@@ -1,5 +1,5 @@
 # MODBUS++  [(MODBSPP)](https://github.com/fanzhe98/modbuspp.git)   v0.3
-
+[![CMake](https://github.com/fanzhe98/modbuspp/actions/workflows/cmake.yml/badge.svg)](https://github.com/fanzhe98/modbuspp/actions/workflows/cmake.yml)
 # 0 Info, Updates and Discalimer
 ## 0.0 Info
 MODBUS++ (MODBUSPP) is an header-only open source c++ class/ library making an encapsulation of [Modbus](https://en.wikipedia.org/wiki/Modbus) TCP Protocol for client.
