@@ -648,7 +648,7 @@ inline ssize_t modbus::modbus_send(uint8_t *to_send, size_t length)
  */
 inline ssize_t modbus::modbus_receive(uint8_t *buffer) const
 {
-    return recv(_socket, (char *)buffer, 1024, 0);
+    return recv(_socket, (char *)buffer, MAX_MSG_LENGTH, 0);
 }
 
 inline void modbus::set_bad_con()
