@@ -10,33 +10,33 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 endif()
 
 # BUILD INTERFACE LIB
-add_library(modbus_lib INTERFACE)
-target_include_directories(modbus_lib INTERFACE
+add_library(modbuspp_lib INTERFACE)
+target_include_directories(modbuspp_lib INTERFACE
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/modbus.h>
 		$<INSTALL_INTERFACE:include>
 		)
 
 include(CMakePackageConfigHelpers)
-install(TARGETS modbus_lib
-		EXPORT modbusTargets
+install(TARGETS modbuspp_lib
+		EXPORT modbusppTargets
 		ARCHIVE DESTINATION lib
 		LIBRARY DESTINATION lib
 		RUNTIME DESTINATION bin
 		PUBLIC_HEADER DESTINATION include )
 
-write_basic_package_version_file("modbusConfigVersion.cmake"
+write_basic_package_version_file("modbusppConfigVersion.cmake"
 		VERSION ${PROJECT_VERSION}
 		COMPATIBILITY SameMajorVersion)
 
 configure_package_config_file(
-		"${PROJECT_SOURCE_DIR}/cmake/modbusConfig.cmake.in"
-		"${PROJECT_BINARY_DIR}/modbusConfig.cmake"
-		INSTALL_DESTINATION lib/cmake/modbus
+		"${PROJECT_SOURCE_DIR}/cmake/modbusppConfig.cmake.in"
+		"${PROJECT_BINARY_DIR}/modbusppConfig.cmake"
+		INSTALL_DESTINATION lib/cmake/modbuspp
 )
-install(EXPORT modbusTargets DESTINATION lib/cmake/modbus)
-install(FILES "${PROJECT_BINARY_DIR}/modbusConfigVersion.cmake"
-		"${PROJECT_BINARY_DIR}/modbusConfig.cmake"
-		DESTINATION lib/cmake/modbus)
+install(EXPORT modbusppTargets DESTINATION lib/cmake/modbuspp)
+install(FILES "${PROJECT_BINARY_DIR}/modbusppConfigVersion.cmake"
+		"${PROJECT_BINARY_DIR}/modbusppConfig.cmake"
+		DESTINATION lib/cmake/modbuspp)
 install(FILES ${PROJECT_SOURCE_DIR}/modbus.h DESTINATION include)
 
 # BUILD EXAMPLE
