@@ -82,7 +82,7 @@ using SOCKADDR_IN = struct sockaddr_in;
 #define EX_NEGATIVE_ACK 0x07
 #define EX_MEM_PARITY_PROB 0x08
 #define EX_GATEWAY_PROBLEMP 0x0A // Gateway Path not Available
-#define EX_GATEWYA_PROBLEMF 0x0B // Target Device Failed to Response
+#define EX_GATEWAY_PROBLEMF 0x0B // Target Device Failed to Response
 #define EX_BAD_DATA 0XFF         // Bad Data lenght or Address
 
 #define BAD_CON -1
@@ -704,7 +704,7 @@ inline void modbus::modbuserror_handle(const uint8_t *msg, int func)
         case EX_GATEWAY_PROBLEMP:
             error_msg = "10 Gateway Path Unavailable";
             break;
-        case EX_GATEWYA_PROBLEMF:
+        case EX_GATEWAY_PROBLEMF:
             error_msg = "11 Gateway Target Device Failed to Respond";
             break;
         default:
