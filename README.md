@@ -1,4 +1,4 @@
-# MODBUS++  [(MODBSPP)](https://github.com/fanzhe98/modbuspp.git)   v0.3
+# MODBUS++  [(MODBSPP)](https://github.com/fanzhe98/modbuspp.git)   v0.3.1
 [![CMake](https://github.com/fanzhe98/modbuspp/actions/workflows/cmake.yml/badge.svg)](https://github.com/fanzhe98/modbuspp/actions/workflows/cmake.yml)
 # 0 Info, Updates and Discalimer
 ## 0.0 Info
