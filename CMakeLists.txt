@@ -16,11 +16,11 @@ install(FILES
 set(EXAMPLE_FILES example/example.cpp)
 add_executable(modbuspp_example ${EXAMPLE_FILES})
 
-target_comiple_options(modbuspp_example "-Wall")
+target_compile_options(modbuspp_example PRIVATE -Wall)
 
 if(NOT WIN32)
     # Append "-Werror" if it is not WIN32
-    target_comiple_options(modbuspp_example "-Werror")
+    target_compile_options(modbuspp_example PRIVATE -Werror)
 endif()
 
 target_compile_definitions(modbuspp_example PUBLIC ENABLE_MODBUSPP_LOGGING)
