@@ -288,7 +288,7 @@ inline void modbus::modbus_build_request(uint8_t *to_send, uint16_t address, int
 inline int modbus::modbus_write(uint16_t address, uint16_t amount, int func, const uint16_t *value)
 {
     int status = 0;
-    uint8_t *to_send;
+    uint8_t *to_send = nullptr;
     if (func == WRITE_COIL || func == WRITE_REG)
     {
         to_send = new uint8_t[12];
