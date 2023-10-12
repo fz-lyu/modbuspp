@@ -83,9 +83,12 @@ using SOCKADDR_IN = struct sockaddr_in;
 #define EX_MEM_PARITY_PROB 0x08
 #define EX_GATEWAY_PROBLEMP 0x0A // Gateway Path not Available
 #define EX_GATEWAY_PROBLEMF 0x0B // Target Device Failed to Response
-#define EX_BAD_DATA 0XFF         // Bad Data lenght or Address
+#define EX_BAD_DATA 0XFF         // Bad Data length or Address
 
-#define BAD_CON -1
+// Network error codes
+#define NET_BAD_CON -1
+#define NET_NO_CONNECTION -2
+#define NET_TIMEOUT -3
 
 /// Modbus Operator Class
 /**
@@ -100,11 +103,11 @@ public:
     int err_no{};
     std::string error_msg;
 
-    modbus(std::string host, uint16_t port);
+    modbus(std::string host, uint16_t port, uint32_t tcp_timeout_ms);
     ~modbus();
 
     bool modbus_connect();
-    void modbus_close() const;
+    void modbus_close();
 
     bool is_connected() const { return _connected; }
 
@@ -126,6 +129,12 @@ private:
     uint32_t _msg_id{};
     int _slaveid{};
     std::string HOST;
+#ifdef WIN32
+    DWORD timeout;
+#else
+    struct timeval timeout
+    {};
+#endif
 
     X_SOCKET _socket{};
     SOCKADDR_IN _server{};
@@ -142,9 +151,9 @@ private:
     ssize_t modbus_send(uint8_t *to_send, size_t length);
     ssize_t modbus_receive(uint8_t *buffer) const;
 
-    void modbuserror_handle(const uint8_t *msg, int func);
+    void modbuserror_handle(int nof_rcv, int nof_req, uint32_t msg_id, const uint8_t *msg, int func);
 
-    void set_bad_con();
+    void set_no_con();
     void set_bad_input();
 };
 
@@ -154,7 +163,7 @@ private:
  * @param port Port for the TCP Connection
  * @return     A Modbus Connector Object
  */
-inline modbus::modbus(std::string host, uint16_t port = 502)
+inline modbus::modbus(std::string host, uint16_t port = 502, uint32_t tcp_timeout_ms = 20000)
 {
     HOST = host;
     PORT = port;
@@ -164,6 +173,12 @@ inline modbus::modbus(std::string host, uint16_t port = 502)
     err = false;
     err_no = 0;
     error_msg = "";
+#ifdef WIN32
+    timeout = tcp_timeout_ms;
+#else
+    timeout.tv_sec = tcp_timeout_ms / 1000;
+    timeout.tv_usec = (tcp_timeout_ms % 1000) * 1000;
+#endif
 }
 
 /**
@@ -217,16 +232,6 @@ inline bool modbus::modbus_connect()
         LOG("Socket Opened Successfully");
     }
 
-#ifdef WIN32
-    const DWORD timeout = 20;
-#else
-    struct timeval timeout
-    {
-    };
-    timeout.tv_sec = 20; // after 20 seconds connect() will timeout
-    timeout.tv_usec = 0;
-#endif
-
     setsockopt(_socket, SOL_SOCKET, SO_SNDTIMEO, (const char *)&timeout, sizeof(timeout));
     setsockopt(_socket, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof(timeout));
     _server.sin_family = AF_INET;
@@ -250,13 +255,14 @@ inline bool modbus::modbus_connect()
 /**
  * Close the Modbus/TCP Connection
  */
-inline void modbus::modbus_close() const
+inline void modbus::modbus_close()
 {
     X_CLOSE_SOCKET(_socket);
 #ifdef _WIN32
     WSACleanup();
 #endif
     LOG("Socket Closed");
+    _connected = false;
 }
 
 /**
@@ -360,15 +366,11 @@ inline int modbus::modbus_read_holding_registers(uint16_t address, uint16_t amou
 {
     if (_connected)
     {
+        uint32_t sent_msg_id = _msg_id;
         modbus_read(address, amount, READ_REGS);
         uint8_t to_rec[MAX_MSG_LENGTH];
         ssize_t k = modbus_receive(to_rec);
-        if (k == -1)
-        {
-            set_bad_con();
-            return BAD_CON;
-        }
-        modbuserror_handle(to_rec, READ_REGS);
+        modbuserror_handle(k, 9u + 2u * amount, sent_msg_id, to_rec, READ_REGS);
         if (err)
             return err_no;
         for (auto i = 0; i < amount; i++)
@@ -376,13 +378,12 @@ inline int modbus::modbus_read_holding_registers(uint16_t address, uint16_t amou
             buffer[i] = ((uint16_t)to_rec[9u + 2u * i]) << 8u;
             buffer[i] += (uint16_t)to_rec[10u + 2u * i];
         }
-        return 0;
     }
     else
     {
-        set_bad_con();
-        return BAD_CON;
+        set_no_con();
     }
+    return err_no;
 }
 
 /**
@@ -396,15 +397,11 @@ inline int modbus::modbus_read_input_registers(uint16_t address, uint16_t amount
 {
     if (_connected)
     {
+        uint32_t sent_msg_id = _msg_id;
         modbus_read(address, amount, READ_INPUT_REGS);
         uint8_t to_rec[MAX_MSG_LENGTH];
         ssize_t k = modbus_receive(to_rec);
-        if (k == -1)
-        {
-            set_bad_con();
-            return BAD_CON;
-        }
-        modbuserror_handle(to_rec, READ_INPUT_REGS);
+        modbuserror_handle(k, 9u + 2u * amount, sent_msg_id, to_rec, READ_INPUT_REGS);
         if (err)
             return err_no;
         for (auto i = 0; i < amount; i++)
@@ -412,13 +409,12 @@ inline int modbus::modbus_read_input_registers(uint16_t address, uint16_t amount
             buffer[i] = ((uint16_t)to_rec[9u + 2u * i]) << 8u;
             buffer[i] += (uint16_t)to_rec[10u + 2u * i];
         }
-        return 0;
     }
     else
     {
-        set_bad_con();
-        return BAD_CON;
+        set_no_con();
     }
+    return err_no;
 }
 
 /**
@@ -437,28 +433,23 @@ inline int modbus::modbus_read_coils(uint16_t address, uint16_t amount, bool *bu
             set_bad_input();
             return EX_BAD_DATA;
         }
+        uint32_t sent_msg_id = _msg_id;
         modbus_read(address, amount, READ_COILS);
         uint8_t to_rec[MAX_MSG_LENGTH];
         ssize_t k = modbus_receive(to_rec);
-        if (k == -1)
-        {
-            set_bad_con();
-            return BAD_CON;
-        }
-        modbuserror_handle(to_rec, READ_COILS);
+        modbuserror_handle(k, 10u + amount / 8u, sent_msg_id, to_rec, READ_COILS);
         if (err)
             return err_no;
         for (auto i = 0; i < amount; i++)
         {
             buffer[i] = (bool)((to_rec[9u + i / 8u] >> (i % 8u)) & 1u);
         }
-        return 0;
     }
     else
     {
-        set_bad_con();
-        return BAD_CON;
+        set_no_con();
     }
+    return err_no;
 }
 
 /**
@@ -477,27 +468,23 @@ inline int modbus::modbus_read_input_bits(uint16_t address, uint16_t amount, boo
             set_bad_input();
             return EX_BAD_DATA;
         }
+        uint32_t sent_msg_id = _msg_id;
         modbus_read(address, amount, READ_INPUT_BITS);
         uint8_t to_rec[MAX_MSG_LENGTH];
         ssize_t k = modbus_receive(to_rec);
-        if (k == -1)
-        {
-            set_bad_con();
-            return BAD_CON;
-        }
+        modbuserror_handle(k, 10u + amount / 8u, sent_msg_id, to_rec, READ_INPUT_BITS);
         if (err)
             return err_no;
         for (auto i = 0; i < amount; i++)
         {
             buffer[i] = (bool)((to_rec[9u + i / 8u] >> (i % 8u)) & 1u);
         }
-        modbuserror_handle(to_rec, READ_INPUT_BITS);
-        return 0;
     }
     else
     {
-        return BAD_CON;
+        set_no_con();
     }
+    return err_no;
 }
 
 /**
@@ -511,24 +498,17 @@ inline int modbus::modbus_write_coil(uint16_t address, const bool &to_write)
     if (_connected)
     {
         int value = to_write * 0xFF00;
+        uint32_t sent_msg_id = _msg_id;
         modbus_write(address, 1, WRITE_COIL, (uint16_t *)&value);
         uint8_t to_rec[MAX_MSG_LENGTH];
         ssize_t k = modbus_receive(to_rec);
-        if (k == -1)
-        {
-            set_bad_con();
-            return BAD_CON;
-        }
-        modbuserror_handle(to_rec, WRITE_COIL);
-        if (err)
-            return err_no;
-        return 0;
+        modbuserror_handle(k, 9, sent_msg_id, to_rec, WRITE_COIL);
     }
     else
     {
-        set_bad_con();
-        return BAD_CON;
+        set_no_con();
     }
+    return err_no;
 }
 
 /**
@@ -541,24 +521,17 @@ inline int modbus::modbus_write_register(uint16_t address, const uint16_t &value
 {
     if (_connected)
     {
+        uint32_t sent_msg_id = _msg_id;
         modbus_write(address, 1, WRITE_REG, &value);
         uint8_t to_rec[MAX_MSG_LENGTH];
         ssize_t k = modbus_receive(to_rec);
-        if (k == -1)
-        {
-            set_bad_con();
-            return BAD_CON;
-        }
-        modbuserror_handle(to_rec, WRITE_COIL);
-        if (err)
-            return err_no;
-        return 0;
+        modbuserror_handle(k, 9, sent_msg_id, to_rec, WRITE_COIL);
     }
     else
     {
-        set_bad_con();
-        return BAD_CON;
+        set_no_con();
     }
+    return err_no;
 }
 
 /**
@@ -577,25 +550,18 @@ inline int modbus::modbus_write_coils(uint16_t address, uint16_t amount, const b
         {
             temp[i] = (uint16_t)value[i];
         }
+        uint32_t sent_msg_id = _msg_id;
         modbus_write(address, amount, WRITE_COILS, temp);
         delete[] temp;
         uint8_t to_rec[MAX_MSG_LENGTH];
         ssize_t k = modbus_receive(to_rec);
-        if (k == -1)
-        {
-            set_bad_con();
-            return BAD_CON;
-        }
-        modbuserror_handle(to_rec, WRITE_COILS);
-        if (err)
-            return err_no;
-        return 0;
+        modbuserror_handle(k, 9, sent_msg_id, to_rec, WRITE_COILS);
     }
     else
     {
-        set_bad_con();
-        return BAD_CON;
+        set_no_con();
     }
+    return err_no;
 }
 
 /**
@@ -609,24 +575,17 @@ inline int modbus::modbus_write_registers(uint16_t address, uint16_t amount, con
 {
     if (_connected)
     {
+        uint32_t sent_msg_id = _msg_id;
         modbus_write(address, amount, WRITE_REGS, value);
         uint8_t to_rec[MAX_MSG_LENGTH];
         ssize_t k = modbus_receive(to_rec);
-        if (k == -1)
-        {
-            set_bad_con();
-            return BAD_CON;
-        }
-        modbuserror_handle(to_rec, WRITE_REGS);
-        if (err)
-            return err_no;
-        return 0;
+        modbuserror_handle(k, 9, sent_msg_id, to_rec, WRITE_REGS);
     }
     else
     {
-        set_bad_con();
-        return BAD_CON;
+        set_no_con();
     }
+    return err_no;
 }
 
 /**
@@ -651,66 +610,140 @@ inline ssize_t modbus::modbus_receive(uint8_t *buffer) const
     return recv(_socket, (char *)buffer, MAX_MSG_LENGTH, 0);
 }
 
-inline void modbus::set_bad_con()
+inline void modbus::set_no_con()
 {
     err = true;
-    error_msg = "BAD CONNECTION";
+    err_no = NET_NO_CONNECTION;
+    error_msg = "Error: modbus_connect has not been called successfully";
 }
 
 inline void modbus::set_bad_input()
 {
     err = true;
+    err_no = EX_BAD_DATA;
     error_msg = "BAD FUNCTION INPUT";
 }
 
 /**
  * Error Code Handler
- * @param msg   Message Received from the Server
- * @param func  Modbus Functional Code
+ * @param nof_rcv Return value from the recv function
+ * @param nof_req Minimum length that the received packet should have
+ * @param msg_id  The expected message id
+ * @param msg     Message Received from the Server
+ * @param func    Modbus Functional Code
  */
-inline void modbus::modbuserror_handle(const uint8_t *msg, int func)
+inline void modbus::modbuserror_handle(int nof_rcv, int nof_req, uint32_t msg_id, const uint8_t *msg, int func)
 {
     err = false;
+    err_no = 0;
     error_msg = "NO ERR";
+
+    // check for network errors
+    if (nof_rcv < 0)
+    {
+        err = true;
+        error_msg = "Network error: ";
+#ifdef _WIN32
+        int net_err = WSAGetLastError();
+        switch (net_err)
+        {
+        case WSANOTINITIALISED:
+        case WSAENOTCONN:
+            err_no = NET_NO_CONNECTION;
+            error_msg += "No connection #" + net_err;
+            break;
+
+        case WSAETIMEDOUT:
+        case WSAEWOULDBLOCK:
+            err_no = NET_TIMEOUT;
+            error_msg += "Timeout #" + net_err;
+            break;
+
+        default:
+            err_no = NET_BAD_CON;
+            error_msg += "Bad connection #" + net_err;
+        }
+#else
+        err_no = NET_BAD_CON;
+        error_msg = "Bad connection.";
+#endif
+
+        return;
+    }
+    else if (nof_rcv == 0)
+    {
+        err = true;
+        err_no = NET_BAD_CON;
+        error_msg = "Network error: Connection reset by host";
+        return;
+    }
+    else if (nof_rcv < nof_req)
+    {
+        err = true;
+        err_no = NET_BAD_CON;
+        error_msg = "Network error: Malformed package received. expected size: ";
+        error_msg += nof_rcv;
+        error_msg += " received: ";
+        error_msg += nof_req;
+        return;
+    }
+
+    // network packet is ok, now check for modbus errors
     if (msg[7] == func + 0x80)
     {
         err = true;
-        switch (msg[8])
+        err_no = msg[8];
+        error_msg = "Modbus error: ";
+        switch (err_no)
         {
         case EX_ILLEGAL_FUNCTION:
-            error_msg = "1 Illegal Function";
+            error_msg += "Illegal Function #" + err_no;
             break;
         case EX_ILLEGAL_ADDRESS:
-            error_msg = "2 Illegal Address";
+            error_msg += "Illegal Address #" + err_no;
             break;
         case EX_ILLEGAL_VALUE:
-            error_msg = "3 Illegal Value";
+            error_msg += "Illegal Value #" + err_no;
             break;
         case EX_SERVER_FAILURE:
-            error_msg = "4 Server Failure";
+            error_msg += "Server Failure #" + err_no;
             break;
         case EX_ACKNOWLEDGE:
-            error_msg = "5 Acknowledge";
+            error_msg += "Acknowledge #" + err_no;
             break;
         case EX_SERVER_BUSY:
-            error_msg = "6 Server Busy";
+            error_msg += "Server Bus #" + err_no;
             break;
         case EX_NEGATIVE_ACK:
-            error_msg = "7 Negative Acknowledge";
+            error_msg += "Negative Acknowledge #" + err_no;
             break;
         case EX_MEM_PARITY_PROB:
-            error_msg = "8 Memory Parity Problem";
+            error_msg += "Memory Parity Problem #" + err_no;
             break;
         case EX_GATEWAY_PROBLEMP:
-            error_msg = "10 Gateway Path Unavailable";
+            error_msg += "Gateway Path Unavailable #" + err_no;
             break;
         case EX_GATEWAY_PROBLEMF:
-            error_msg = "11 Gateway Target Device Failed to Respond";
+            error_msg += "Gateway Target Device Failed to Respond #" + err_no;
             break;
         default:
-            error_msg = "UNK";
+            error_msg += "UNKNOWN #" + err_no;
             break;
         }
+    }
+
+    // now check if the received packet id corresponds to the expected one
+    uint32_t received_id = ((uint16_t)msg[0]) << 8u;
+    received_id += (uint16_t)msg[1];
+    if (received_id != msg_id)
+    {
+        err = true;
+        err_no = NET_BAD_CON;
+        error_msg = "Modbus error: Wrong packet ID received. expected: ";
+        error_msg += msg_id;
+        error_msg += " received: ";
+        error_msg += received_id;
+        return;
     }
 }
 
